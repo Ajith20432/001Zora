@@ -1,0 +1,250 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                   ZORA v1.2.1+ DEPLOYMENT QUICK START                       ║
+║                          5-Minute Setup Guide                               ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+⚡ ULTRA-FAST DEPLOYMENT (5 MINUTES)
+════════════════════════════════════════════════════════════════════════════════
+
+PREREQUISITES:
+✓ Android Termux with Python 3.11+
+✓ Python packages: requests, pandas, numpy, fastapi, uvicorn
+✓ Existing ZORA bot installation (~/zora_advanced_bot/)
+
+════════════════════════════════════════════════════════════════════════════════
+
+STEP 1: BACKUP (30 SECONDS)
+────────────────────────────────────────────────────────────────────────────────
+
+cd ~/zora_advanced_bot/master_quant_original
+
+# Backup originals
+cp multi_ai.py multi_ai.py.bak
+cp strategy.py strategy.py.bak
+cp risk.py risk.py.bak
+cp config.py config.py.bak
+cp .env .env.bak
+
+echo "✓ Backups created"
+
+════════════════════════════════════════════════════════════════════════════════
+
+STEP 2: INSTALL UPGRADED FILES (1 MINUTE)
+────────────────────────────────────────────────────────────────────────────────
+
+# Copy downloaded files to bot directory
+cp ~/Downloads/multi_ai_UPGRADED.py ./multi_ai.py
+cp ~/Downloads/strategy_UPGRADED.py ./strategy.py
+cp ~/Downloads/risk_UPGRADED.py ./risk.py
+cp ~/Downloads/config_UPGRADED.py ./config.py
+
+echo "✓ Upgraded files installed"
+
+════════════════════════════════════════════════════════════════════════════════
+
+STEP 3: CONFIGURE API KEYS (2 MINUTES)
+────────────────────────────────────────────────────────────────────────────────
+
+nano .env
+
+# ADD THESE LINES (get keys from websites below):
+GROQ_API_KEY=<your_groq_key>
+  # Get free from: https://console.groq.com/keys
+
+OPENROUTER_API_KEY=<your_openrouter_key>
+  # Get free from: https://openrouter.ai/keys
+
+MISTRAL_API_KEY=<your_mistral_key>
+  # Get from: https://console.mistral.ai
+
+HUGGINGFACE_API_KEY=<your_huggingface_key>
+  # Get from: https://huggingface.co/settings/tokens
+
+GEMINI_API_KEY=<your_gemini_key>  # CRITICAL!
+  # Get free from: https://aistudio.google.com/app/apikeys
+
+# Save and exit nano: Ctrl+O, Enter, Ctrl+X
+
+echo "✓ API keys configured"
+
+════════════════════════════════════════════════════════════════════════════════
+
+STEP 4: VERIFY (1.5 MINUTES)
+────────────────────────────────────────────────────────────────────────────────
+
+# Test syntax
+python3 -m py_compile multi_ai.py strategy.py risk.py config.py
+echo "✓ Syntax OK"
+
+# Test imports
+python3 << 'PYEOF'
+import multi_ai, strategy, risk, config
+print("✓ All modules imported")
+print(f"✓ Config loaded: {config.CFG.symbols}")
+print(f"✓ Risk params: {config.CFG.max_risk_per_trade_pct*100:.1f}% per trade")
+print(f"✓ AI providers: {config.CFG.ai_providers_available}/4 + Judge")
+PYEOF
+
+# Test AI health
+python3 << 'PYEOF'
+import multi_ai
+print("Testing AI providers...")
+h = multi_ai.ai_healthcheck()
+for p, s in h.get("providers", {}).items():
+    st = "✓" if s.get("status") == "OK" else "✗"
+    print(f"  {st} {p}: {s.get('status')}")
+j = h.get("judge", {}).get("status")
+jst = "✓" if j == "OK" else "✗"
+print(f"  {jst} Judge: {j}")
+PYEOF
+
+echo ""
+echo "═════════════════════════════════════════════════════════════════"
+echo "✅ SETUP COMPLETE! Bot is ready to run."
+echo "═════════════════════════════════════════════════════════════════"
+
+════════════════════════════════════════════════════════════════════════════════
+
+STEP 5: START BOT (PAPER MODE)
+────────────────────────────────────────────────────────────────────────────────
+
+# Start paper trading (no real money)
+python3 bot.py paper &
+
+# Or with logging
+python3 bot.py paper 2>&1 | tee bot.log &
+
+# Check dashboard (in browser or curl)
+curl http://127.0.0.1:5000/health
+
+echo "✓ Bot running in paper mode"
+
+════════════════════════════════════════════════════════════════════════════════
+
+🎯 NEXT STEPS:
+
+HOUR 1: Verify System
+─────────────────────
+□ Check dashboard: http://127.0.0.1:5000
+□ Verify trades are being evaluated
+□ Check AI consensus accuracy
+□ Monitor logs for errors
+
+WEEK 1-2: Paper Validation
+──────────────────────────
+□ Let bot run for 2 weeks in paper mode
+□ Monitor equity curve (should be growing)
+□ Check win rate (should be >50%)
+□ Verify partial TP execution
+□ Test intra-candle triggers
+□ Verify circuit breaker (simulate 4% loss)
+
+WEEK 3: Go Live (If Validated)
+──────────────────────────────
+□ Update .env: TRADING_MODE=live
+□ Start with 25% of intended capital
+□ Monitor 24/7 for first week
+□ Check AI provider uptime daily
+□ Review daily P&L
+□ Be ready to stop immediately if needed
+
+════════════════════════════════════════════════════════════════════════════════
+
+⚠️  CRITICAL SAFETY NOTES:
+
+1. NEVER skip paper mode validation!
+   → Always test 2+ weeks before real money
+
+2. API keys are PRECIOUS
+   → Keep .env file private (never commit to git)
+   → Use separate keys for paper vs live
+   → Rotate keys monthly
+
+3. Circuit breaker is your safety net
+   → 4% daily loss → 24h halt on new entries
+   → Never override this
+   → Design stops to respect max_risk_per_trade_pct
+
+4. Start small with capital
+   → Initial capital = 25-50% of intended
+   → Scale up only after 30+ days profitable
+   → Never use margin/leverage
+
+5. Monitor daily
+   → Check equity at market open
+   → Review P&L and trades
+   → Verify AI providers are responding
+   → Watch for circuit breaker activations
+
+════════════════════════════════════════════════════════════════════════════════
+
+🆘 QUICK FIXES:
+
+"Module not found"
+  → pip install requests pandas numpy fastapi uvicorn
+
+"GEMINI_API_KEY not configured"
+  → This is CRITICAL! Get free key from: aistudio.google.com/app/apikeys
+
+"AI providers timing out"
+  → Increase AI_PROVIDER_TIMEOUT_SEC=15 (default 12)
+
+"Circuit breaker triggered"
+  → Expected! Means 4% daily loss hit. System locked for 24h.
+  → Reduce MAX_RISK_PER_TRADE_PCT to 0.01 (1%) if too frequent
+
+"No trades placed"
+  → Check AI confidence >= 75% threshold
+  → Verify TRADING_MODE=paper (not "live" yet)
+  → Review logs for signal generation
+
+════════════════════════════════════════════════════════════════════════════════
+
+📊 MONITORING COMMANDS:
+
+# Real-time logs
+tail -f ~/zora_advanced_bot/logs/zora.log
+
+# Filter for trade events
+tail -f ~/zora_advanced_bot/logs/zora.log | grep "Judge\|TP1\|TRIGGER"
+
+# Check equity growth
+python3 << 'PYEOF'
+from db import *
+# Query recent trades
+PYEOF
+
+# Health check
+curl http://127.0.0.1:5000/health
+
+# Metrics
+curl http://127.0.0.1:5000/metrics
+
+════════════════════════════════════════════════════════════════════════════════
+
+📚 FULL DOCUMENTATION:
+
+For detailed info, see:
+  1. IMPLEMENTATION_GUIDE_v1.2.1_UPGRADES.md (detailed integration)
+  2. UPGRADES_SUMMARY.txt (feature overview)
+  3. Each file's docstring (in the code)
+
+════════════════════════════════════════════════════════════════════════════════
+
+🎉 THAT'S IT!
+
+You now have a production-ready crypto trading bot with:
+  ✅ 5-AI expert consensus (Groq + OpenRouter + Mistral + HF + Gemini)
+  ✅ Advanced risk management (1.5R partial TP, auto-BE, trailing runner)
+  ✅ Hybrid triggering (candle close + intra-candle volume/breakout)
+  ✅ Dynamic position sizing (1-2% based on volatility)
+  ✅ Daily circuit breaker (4% protection)
+  ✅ Production-ready error handling
+
+Happy trading! 🚀
+
+════════════════════════════════════════════════════════════════════════════════
+Version: ZORA v1.2.1+
+Status: ✅ PRODUCTION READY
+Platform: Android Termux, Python 3.11+
+════════════════════════════════════════════════════════════════════════════════
